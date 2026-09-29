@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      xunit.runner.visualstudio itself only supports net462+, so it cannot run on net46 — that's a
+      test-tooling floor, not a library one. This project stays net6.0 (covers the System.Text.Json
+      branch, shared with the library's netstandard2.0 target); the Newtonsoft.Json/net46 branch is
+      covered separately by the Bazdidfani.ApiClient.Net46SmokeTest console app.
+    -->
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Bazdidfani.ApiClient\Bazdidfani.ApiClient.csproj" />
+  </ItemGroup>
+
+</Project>

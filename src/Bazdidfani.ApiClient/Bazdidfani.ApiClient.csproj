@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net46;netstandard2.0;net6.0</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Bazdidfani.ApiClient</PackageId>
+    <Version>1.2.0</Version>
+    <Authors>Bazdidfani</Authors>
+    <Description>کلاینت دات‌نت برای وب‌سرویس بازدید فنی و خوداظهاری بازدیدفنی. کد سازمان در هر فراخوانی ارسال می‌شود.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>bazdidfani;technical-inspection;self-statement;api-client</PackageTags>
+  </PropertyGroup>
+
+  <!--
+    Microsoft.Extensions.Http (IHttpClientFactory/IServiceCollection integration) and
+    System.Text.Json (every released version) both support net461+ at minimum, not net46 —
+    confirmed by NU1202 on restore. net46 gets its own JSON backend (Newtonsoft.Json, via the
+    Bazdidfani.ApiClient.Json abstraction) and drops the DI extension, which net46 consumers
+    (WinForms/WPF on older .NET Framework) don't use anyway — see the non-DI constructor in README.
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <Compile Remove="DependencyInjection\**\*.cs" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="6.0.9" />
+  </ItemGroup>
+
+</Project>
