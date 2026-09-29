@@ -10,12 +10,21 @@
 
   <PropertyGroup>
     <PackageId>Bazdidfani.ApiClient</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Bazdidfani</Authors>
     <Description>کلاینت دات‌نت برای وب‌سرویس بازدید فنی و خوداظهاری بازدیدفنی. کد سازمان در هر فراخوانی ارسال می‌شود.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>bazdidfani;technical-inspection;self-statement;api-client</PackageTags>
+    <PackageProjectUrl>https://bazdidfani.ir</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>ثبت بازدید جدید تا پایان اعتبار کد سباف (sabaf_code_expires_at) مجاز نیست؛ برای کدهای بدون تاریخ انقضا همان قاعدهٔ ResubmissionCooldownHours اعمال می‌شود.</PackageReleaseNotes>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <!--
     Microsoft.Extensions.Http (IHttpClientFactory/IServiceCollection integration) and

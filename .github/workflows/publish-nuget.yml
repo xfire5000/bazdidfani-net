@@ -1,0 +1,78 @@
+name: Publish .NET client to NuGet
+
+# انتشار پکیج Bazdidfani.ApiClient روی nuget.org با Trusted Publishing (بدون API key دائمی).
+# اجرا: push تگ dotnet-v<version> (مثلاً dotnet-v1.3.0) که باید با <Version> داخل csproj یکی باشد،
+# یا اجرای دستی از تب Actions.
+
+on:
+  push:
+    tags:
+      - 'dotnet-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-nuget-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: packages/bazdidfani-api-client-dotnet
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+
+      - name: Verify tag matches csproj version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          [xml] $project = Get-Content src/Bazdidfani.ApiClient/Bazdidfani.ApiClient.csproj
+          $packageVersion = @($project.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          Write-Host "Package version: $packageVersion"
+
+          if ($env:REF_TYPE -eq 'tag') {
+            $tagVersion = $env:REF_NAME.Substring('dotnet-v'.Length)
+            if ($tagVersion -ne $packageVersion) {
+              Write-Error "Tag version ($tagVersion) does not match csproj <Version> ($packageVersion)."
+              exit 1
+            }
+          }
+
+      - name: Test
+        run: dotnet test tests/Bazdidfani.ApiClient.Tests -c Release
+
+      - name: Pack
+        run: dotnet pack src/Bazdidfani.ApiClient -c Release -o artifacts
+
+      - name: NuGet login (OIDC → temporary API key)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to nuget.org
+        run: >-
+          dotnet nuget push "artifacts/*.nupkg"
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: packages/bazdidfani-api-client-dotnet/artifacts/
