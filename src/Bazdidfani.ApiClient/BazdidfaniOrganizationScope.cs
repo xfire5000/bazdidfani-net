@@ -50,12 +50,14 @@ namespace Bazdidfani.ApiClient
         public Task EnsureNewTechnicalInspectionAllowedAsync(
             long smartNumber,
             bool forceCreate = false,
-            CancellationToken cancellationToken = default) =>
+            CancellationToken cancellationToken = default,
+            int? branchCode = 1) =>
             _client.EnsureNewTechnicalInspectionAllowedAsync(
                 OrganizationCode,
                 smartNumber,
                 forceCreate,
-                cancellationToken);
+                cancellationToken,
+                branchCode);
 
         /// <inheritdoc cref="IBazdidfaniApiClient.TechnicalInspectionInquiryCargoAsync" />
         public Task<BazdidfaniApiResponse> TechnicalInspectionInquiryCargoAsync(
@@ -81,6 +83,11 @@ namespace Bazdidfani.ApiClient
             CancellationToken cancellationToken = default) =>
             _client.TechnicalManagersAsync(OrganizationCode, query, cancellationToken);
 
+        /// <inheritdoc cref="IBazdidfaniApiClient.BranchesAsync" />
+        public Task<BazdidfaniApiResponse> BranchesAsync(
+            CancellationToken cancellationToken = default) =>
+            _client.BranchesAsync(OrganizationCode, cancellationToken);
+
         /// <inheritdoc cref="IBazdidfaniApiClient.FleetAsync" />
         public Task<BazdidfaniApiResponse> FleetAsync(
             object? query = null,
@@ -90,8 +97,9 @@ namespace Bazdidfani.ApiClient
         /// <inheritdoc cref="IBazdidfaniApiClient.VehicleAsync" />
         public Task<BazdidfaniApiResponse> VehicleAsync(
             long smartNumber,
-            CancellationToken cancellationToken = default) =>
-            _client.VehicleAsync(OrganizationCode, smartNumber, cancellationToken);
+            CancellationToken cancellationToken = default,
+            int? branchCode = null) =>
+            _client.VehicleAsync(OrganizationCode, smartNumber, cancellationToken, branchCode);
 
         /// <inheritdoc cref="IBazdidfaniApiClient.CitiesAsync" />
         public Task<BazdidfaniApiResponse> CitiesAsync(

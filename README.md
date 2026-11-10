@@ -109,9 +109,12 @@ var companyB = await client.FleetAsync("87654321");
 var company = client.ForOrganization(selectedCompany.OrganizationCode);
 
 var fleet = await company.FleetAsync(new { per_page = 50 });
-var managers = await company.TechnicalManagersAsync();
-var vehicle = await company.VehicleAsync(1234567);
+var managers = await company.TechnicalManagersAsync(new { branch_code = 2 });
+var branches = await company.BranchesAsync();
+var vehicle = await company.VehicleAsync(1234567, branchCode: 2);
 ```
+
+فیلتر `branch_code` در `TechnicalManagersAsync` اختیاری است؛ بدون آن مدیران همهٔ شعب سازمان برمی‌گردند. پارامتر `branchCode` در `VehicleAsync` نتیجه را به یک شعبه محدود می‌کند.
 
 ## متدهای موجود
 
@@ -124,6 +127,7 @@ var vehicle = await company.VehicleAsync(1234567);
 | `TechnicalInspectionInquiryCargoAsync` | `POST /technical-inspections/inquiry-cargo` | استعلام بازدید باری |
 | `TechnicalInspectionInquiryPassengerAsync` | `POST /technical-inspections/inquiry-passenger` | استعلام بازدید مسافری |
 | `TechnicalManagersAsync` | `GET /technical-managers` | مدیران فنی فعال شرکت |
+| `BranchesAsync` | `GET /branches` | نام شرکت، نام و کد شعبه‌های همان سازمان؛ شامل شعبهٔ مادر |
 | `FleetAsync` | `GET /fleet` | ناوگان شرکت |
 | `VehicleAsync` | `GET /fleet/vehicle` | اطلاعات کامل یک ناوگان |
 | `CitiesAsync` / `StatesAsync` / `LoaderTypesAsync` | `GET /cities` و … | داده‌های مرجع |
@@ -139,11 +143,15 @@ var response = await client.SubmitTechnicalInspectionAsync("12345678", new Dicti
     ["smart_number"] = "1234567",
     ["loader_code"] = 100,
     ["technical_manager_national_code"] = "0012345678",
+    ["branch_code"] = 2,                            // اختیاری؛ پیش‌فرض ۱ (شرکت مادر)
     ["driver_national_code"] = "0011223344",
 });
 
 var code = response.Data.GetProperty("bazdidfani").GetProperty("code").GetString();
 ```
+
+برای انتخاب شعبه، ابتدا `BranchesAsync("12345678")` را فراخوانی کنید. پاسخ بدون صفحه‌بندی است و `data` آرایه‌ای از `{ company_name, branch_name, branch_code }` دارد؛ `branch_name` ممکن است `null` باشد. کد سازمانی در هدر برای تمام شعب یکسان می‌ماند و کد شعبه در بدنهٔ ثبت بازدید ارسال می‌شود.
+پیش‌بررسی `SubmitTechnicalInspectionAsync` خودکار از `branch_code` بدنه استفاده می‌کند و در نبود آن شعبهٔ مادر (`1`) را بررسی می‌کند.
 
 کلیدهای بدنه دقیقاً همان نام‌های snake_case سرور هستند. اگر به‌جای دیکشنری از DTO استفاده می‌کنید،
 روی هر پراپرتی `[JsonPropertyName("smart_number")]` بگذارید.
@@ -152,7 +160,7 @@ var code = response.Data.GetProperty("bazdidfani").GetProperty("code").GetString
 نزد همین شرکت بازدید فعالی داشته باشد یا کد سباف آخرین بازدیدش هنوز معتبر باشد (`sabaf_code_expires_at`
 هنوز نرسیده باشد)، `TechnicalInspectionNotAllowedException` پرتاب می‌شود. اگر کد سباف تاریخ انقضا نداشته
 باشد (کدهای قدیمی یا مسیر خوداظهاری)، قاعدهٔ قبلی اعمال می‌شود: باید حداقل `ResubmissionCooldownHours`
-ساعت از `sabaf_received_at` گذشته باشد. برای نادیده گرفتن این
+ساعت از `sabaf_received_at` گذشته باشد. بازدید بدون کد سباف که در سامانه ابطال شده (`last_visit.status=16`)، مانع ثبت دوباره نیست. برای نادیده گرفتن این
 بررسی (مثل ابطال بازدید فعلی و ثبت بازدید جدید در خود سامانه):
 
 ```csharp

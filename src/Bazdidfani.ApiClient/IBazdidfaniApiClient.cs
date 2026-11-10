@@ -41,13 +41,15 @@ namespace Bazdidfani.ApiClient
 
         /// <summary>
         /// بررسی می‌کند ثبت یک بازدید فنی جدید برای این ناوگان نزد همین شرکت مجاز است یا نه.
+        /// کد شعبه پیش‌فرض ۱ است و می‌توان آن را با <c>branchCode</c> تعیین کرد.
         /// </summary>
         /// <exception cref="Exceptions.TechnicalInspectionNotAllowedException">وقتی ثبت بازدید جدید مجاز نباشد.</exception>
         Task EnsureNewTechnicalInspectionAllowedAsync(
             string organizationCode,
             long smartNumber,
             bool forceCreate = false,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            int? branchCode = 1);
 
         /// <summary>استعلام بازدید فنی باری از سازمان.</summary>
         Task<BazdidfaniApiResponse> TechnicalInspectionInquiryCargoAsync(
@@ -67,6 +69,11 @@ namespace Bazdidfani.ApiClient
             object? query = null,
             CancellationToken cancellationToken = default);
 
+        /// <summary>شعب شرکت، شامل شعبهٔ مادر با کد ۱.</summary>
+        Task<BazdidfaniApiResponse> BranchesAsync(
+            string organizationCode,
+            CancellationToken cancellationToken = default);
+
         /// <summary>فهرست ناوگان شرکت.</summary>
         Task<BazdidfaniApiResponse> FleetAsync(
             string organizationCode,
@@ -75,7 +82,7 @@ namespace Bazdidfani.ApiClient
 
         /// <summary>
         /// اطلاعات کامل یک ناوگان بر اساس کد هوشمند: مشخصات ناوگان، کد سباف و مدیر فنیِ آخرین بازدید،
-        /// و اطلاعات شرکت.
+        /// و اطلاعات شرکت. <c>branchCode</c> اختیاری، استعلام را به یک شعبه محدود می‌کند.
         /// </summary>
         /// <exception cref="Exceptions.TechnicalInspectionNotAllowedException">
         /// وقتی آخرین بازدید این ناوگان هنوز کد سباف ندارد. دادهٔ خام پاسخ از طریق
@@ -84,7 +91,8 @@ namespace Bazdidfani.ApiClient
         Task<BazdidfaniApiResponse> VehicleAsync(
             string organizationCode,
             long smartNumber,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            int? branchCode = null);
 
         /// <summary>فهرست شهرها (دادهٔ مرجع، مستقل از شرکت).</summary>
         Task<BazdidfaniApiResponse> CitiesAsync(

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
@@ -22,6 +23,7 @@ namespace Bazdidfani.ApiClient
         private const string InquiryCargoPath = "/api/v1/webservice/technical-inspections/inquiry-cargo";
         private const string InquiryPassengerPath = "/api/v1/webservice/technical-inspections/inquiry-passenger";
         private const string TechnicalManagersPath = "/api/v1/webservice/technical-managers";
+        private const string BranchesPath = "/api/v1/webservice/branches";
         private const string FleetPath = "/api/v1/webservice/fleet";
         private const string VehiclePath = "/api/v1/webservice/fleet/vehicle";
         private const string CitiesPath = "/api/v1/webservice/cities";
@@ -90,7 +92,8 @@ namespace Bazdidfani.ApiClient
                 organizationCode,
                 ReadSmartNumber(body),
                 forceCreate,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken,
+                ReadBranchCode(body) ?? 1).ConfigureAwait(false);
 
             if (forceCreate)
             {
@@ -106,7 +109,8 @@ namespace Bazdidfani.ApiClient
             string organizationCode,
             long smartNumber,
             bool forceCreate = false,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            int? branchCode = 1)
         {
             if (forceCreate)
             {
@@ -117,7 +121,7 @@ namespace Bazdidfani.ApiClient
 
             try
             {
-                vehicle = await VehicleAsync(organizationCode, smartNumber, cancellationToken).ConfigureAwait(false);
+                vehicle = await VehicleAsync(organizationCode, smartNumber, cancellationToken, branchCode).ConfigureAwait(false);
             }
             catch (TechnicalInspectionNotAllowedException exception)
             {
@@ -163,6 +167,12 @@ namespace Bazdidfani.ApiClient
             GetAsync(TechnicalManagersPath, organizationCode, query, cancellationToken);
 
         /// <inheritdoc />
+        public Task<BazdidfaniApiResponse> BranchesAsync(
+            string organizationCode,
+            CancellationToken cancellationToken = default) =>
+            GetAsync(BranchesPath, organizationCode, query: null, cancellationToken);
+
+        /// <inheritdoc />
         public Task<BazdidfaniApiResponse> FleetAsync(
             string organizationCode,
             object? query = null,
@@ -173,12 +183,23 @@ namespace Bazdidfani.ApiClient
         public async Task<BazdidfaniApiResponse> VehicleAsync(
             string organizationCode,
             long smartNumber,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            int? branchCode = null)
         {
+            var query = new Dictionary<string, object?>
+            {
+                ["smart_number"] = smartNumber,
+            };
+
+            if (branchCode.HasValue)
+            {
+                query["branch_code"] = branchCode.Value;
+            }
+
             var vehicle = await GetAsync(
                 VehiclePath,
                 organizationCode,
-                new { smart_number = smartNumber },
+                query,
                 cancellationToken).ConfigureAwait(false);
 
             var data = vehicle.Data;
@@ -373,9 +394,27 @@ namespace Bazdidfani.ApiClient
                 : 0;
         }
 
+        private static int? ReadBranchCode(JsonObjectBuilder payload)
+        {
+            var raw = payload.GetString("branch_code");
+
+            return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var branchCode)
+                ? branchCode
+                : null;
+        }
+
         private static void EnsureNoActiveVisitBlocksNewTechnicalInspection(JsonValue vehicleData)
         {
             if (IsMissingValue(vehicleData, "last_visit"))
+            {
+                return;
+            }
+
+            var lastVisit = vehicleData.GetProperty("last_visit");
+
+            if (lastVisit.TryGetProperty("status", out var status)
+                && status.ValueKind == JsonValueKind.Number
+                && status.GetRawText() == "16")
             {
                 return;
             }

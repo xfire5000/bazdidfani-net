@@ -107,6 +107,7 @@ namespace Bazdidfani.ApiClient.Tests
             });
 
             var submission = handler.Requests[handler.Requests.Count - 1];
+            Assert.Contains("branch_code=1", handler.Requests[0].Url);
             Assert.Equal(HttpMethod.Post, submission.Method);
             Assert.Contains("/webservice/technical-inspections", submission.Url);
             Assert.Equal("12345678", submission.Header("X-Organization-Code"));
@@ -149,6 +150,47 @@ namespace Bazdidfani.ApiClient.Tests
             Assert.Contains("بازدید فنی فعالی", exception.Message);
             Assert.Equal("TECH-1", exception.VehicleData.GetProperty("last_visit").GetProperty("code").GetString());
             Assert.Single(handler.Requests);
+        }
+
+        [Fact]
+        public async Task It_allows_submission_after_the_last_visit_was_cancelled()
+        {
+            var handler = new FakeHttpMessageHandler()
+                .Respond(
+                    "/webservice/fleet/vehicle",
+                    "{\"success\":true,\"data\":{\"sabaf_code\":null,\"last_visit\":{\"code\":\"TECH-1\",\"status\":16}}}")
+                .Respond("/webservice/technical-inspections", "{\"success\":true,\"data\":{\"bazdidfani\":{\"id\":2,\"code\":\"TECH-2\"}}}");
+            var client = CreateClient(handler);
+
+            var response = await client.SubmitTechnicalInspectionAsync("12345678", new Dictionary<string, object?>
+            {
+                ["smart_number"] = "1234567",
+                ["branch_code"] = 2,
+            });
+
+            Assert.True(response.Success);
+            Assert.Equal(2, handler.Requests.Count);
+            Assert.Contains("branch_code=2", handler.Requests[0].Url);
+            Assert.Equal(HttpMethod.Post, handler.Requests[1].Method);
+        }
+
+        [Fact]
+        public async Task It_lists_company_branches_for_an_organization_scope()
+        {
+            var handler = new FakeHttpMessageHandler()
+                .Respond(
+                    "/webservice/branches",
+                    "{\"success\":true,\"data\":[{\"company_name\":\"شرکت نمونه\",\"branch_name\":\"مرکزی\",\"branch_code\":1}]}");
+            var client = CreateClient(handler);
+
+            var response = await client.ForOrganization("12345678").BranchesAsync();
+
+            Assert.True(response.Success);
+            Assert.Contains("\"branch_code\":1", response.Data.GetRawText());
+            var request = Assert.Single(handler.Requests);
+            Assert.Equal(HttpMethod.Get, request.Method);
+            Assert.EndsWith("/api/v1/webservice/branches", request.Url);
+            Assert.Equal("12345678", request.Header("X-Organization-Code"));
         }
 
         [Fact]
