@@ -7,15 +7,11 @@ name: Publish .NET client to NuGet
 on:
   push:
     tags:
-      - 'dotnet-v*'
+      - "dotnet-v*"
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: publish-nuget-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   publish:
